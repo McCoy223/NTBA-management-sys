@@ -79,3 +79,28 @@ npm install
 npm run dev     # Starts dev server on port 3000
 npm run build   # Production Vite build
 ```
+
+## Hosting with GitHub Pages (Automated Deployment)
+
+This repository includes a preconfigured GitHub Actions workflow at `.github/workflows/deploy.yml` that builds and deploys the app to GitHub Pages automatically whenever you push to `main` or `master`.
+
+### Steps to Host:
+
+1. **Push your code to your GitHub repository**:
+   ```bash
+   git add .
+   git commit -m "Deploy NTBA School Management App"
+   git push origin main
+   ```
+
+2. **Enable GitHub Pages**:
+   - In your GitHub repository, click on **Settings** (top navigation).
+   - In the left sidebar, click on **Pages** (under the "Code and automation" section).
+   - Under **Build and deployment** > **Source**, choose **GitHub Actions** from the dropdown.
+
+3. **Automatic Deployment**:
+   - GitHub Actions will run the `.github/workflows/deploy.yml` workflow automatically.
+   - You can track progress under the **Actions** tab.
+   - Once completed, your live school management system will be published at:
+     `https://<your-github-username>.github.io/<your-repository-name>/`
+
