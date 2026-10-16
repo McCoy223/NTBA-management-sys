@@ -1,0 +1,8 @@
+{
+  "name": "New Testament Baptist Academy",
+  "description": "School management dashboard for New Testament Baptist Academy — Creche to Primary. Manage students, classes, attendance, announcements, and school content.",
+  "prompt": "School management system for New Testament Baptist Academy",
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
