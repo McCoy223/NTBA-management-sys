@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { ClerkProvider } from '@clerk/clerk-react';
 import { Topbar } from './components/Topbar';
 import { Sidebar } from './components/Sidebar';
 import { Toast } from './components/Toast';
-import { AuthModal } from './components/AuthModal';
+import { ClerkAuthModal } from './components/ClerkAuthModal';
+import { ClerkAuthSync } from './components/ClerkAuthSync';
 
 import { DashboardView } from './views/DashboardView';
 import { StudentsView } from './views/StudentsView';
@@ -25,6 +27,11 @@ import {
   DEFAULT_USER
 } from './data/mockData';
 import { Student, Teacher, FeePayment, ActivityItem, EditorState, UserSession } from './types';
+import {
+  getClerkPublishableKey,
+  saveClerkPublishableKey,
+  clearClerkPublishableKey
+} from './auth/clerkConfig';
 
 const STORAGE_KEYS = {
   SESSION: 'ntba.session',
@@ -35,7 +42,17 @@ const STORAGE_KEYS = {
   EDITOR: 'ntba.editor.draft.v1'
 };
 
-export const App: React.FC = () => {
+interface AppContentProps {
+  clerkKey: string;
+  onUpdateClerkKey: (key: string) => void;
+  isClerkActive: boolean;
+}
+
+const AppContent: React.FC<AppContentProps> = ({
+  clerkKey,
+  onUpdateClerkKey,
+  isClerkActive
+}) => {
   // Session
   const [user, setUser] = useState<UserSession>(() => {
     try {
@@ -55,13 +72,13 @@ export const App: React.FC = () => {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [toastKind, setToastKind] = useState<'success' | 'warn'>('success');
 
-  const showToast = (msg: string, kind: 'success' | 'warn' = 'success') => {
+  const showToast = useCallback((msg: string, kind: 'success' | 'warn' = 'success') => {
     setToastMessage(msg);
     setToastKind(kind);
     setTimeout(() => {
       setToastMessage(null);
     }, 2800);
-  };
+  }, []);
 
   // Editor State
   const [editorState, setEditorState] = useState<EditorState>(() => {
@@ -99,7 +116,7 @@ export const App: React.FC = () => {
     return INITIAL_FEES;
   });
 
-  // Recent activities
+  // Recent activity logs
   const [activities, setActivities] = useState<ActivityItem[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEYS.ACTIVITIES);
@@ -108,7 +125,7 @@ export const App: React.FC = () => {
     return INITIAL_ACTIVITIES;
   });
 
-  // Persist handlers
+  // Persistence effects
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEYS.STUDENTS, JSON.stringify(students));
@@ -144,6 +161,22 @@ export const App: React.FC = () => {
       localStorage.setItem(STORAGE_KEYS.SESSION, JSON.stringify(user));
     } catch {}
   }, [user]);
+
+  // Clerk Auth Sync
+  const handleClerkSyncUser = (clerkSession: UserSession) => {
+    setUser((prev) => ({
+      ...clerkSession,
+      // Retain persona role override if previously switched locally
+      role: prev.clerkId === clerkSession.clerkId && prev.role ? prev.role : clerkSession.role
+    }));
+    setIsAuthModalOpen(false);
+  };
+
+  const handleClerkSignedOut = () => {
+    if (isClerkActive) {
+      setIsAuthModalOpen(true);
+    }
+  };
 
   // Activity logger helper
   const recordActivity = (
@@ -223,7 +256,7 @@ export const App: React.FC = () => {
     setIsAuthModalOpen(true);
   };
 
-  const handleLogin = (newUser: UserSession) => {
+  const handleDemoLogin = (newUser: UserSession) => {
     setUser(newUser);
     setIsAuthModalOpen(false);
     showToast(`Welcome back, ${newUser.name}!`);
@@ -234,7 +267,9 @@ export const App: React.FC = () => {
       ...user,
       role,
       name:
-        role === 'admin'
+        user.clerkId
+          ? user.name
+          : role === 'admin'
           ? 'Admin User'
           : role === 'teacher'
           ? 'Mr. Emmanuel'
@@ -285,7 +320,7 @@ export const App: React.FC = () => {
           <ClassesView
             students={students}
             onNavigateDashboard={() => setCurrentView('dashboard')}
-            onSelectClassStudents={(k) => {
+            onSelectClassStudents={() => {
               setCurrentView('students');
             }}
             showToast={showToast}
@@ -341,6 +376,8 @@ export const App: React.FC = () => {
             teachers={teachers}
             feePayments={feePayments}
             editorState={editorState}
+            clerkKey={clerkKey}
+            onUpdateClerkKey={onUpdateClerkKey}
             onResetData={handleResetData}
             onNavigateDashboard={() => setCurrentView('dashboard')}
             showToast={showToast}
@@ -362,6 +399,13 @@ export const App: React.FC = () => {
 
   return (
     <div>
+      {isClerkActive && (
+        <ClerkAuthSync
+          onSyncUser={handleClerkSyncUser}
+          onSignedOut={handleClerkSignedOut}
+        />
+      )}
+
       <Topbar
         user={user}
         onSignOut={handleSignOut}
@@ -377,6 +421,7 @@ export const App: React.FC = () => {
         schoolName={editorState.school.name}
         schoolSub={editorState.school.sub}
         schoolMotto={editorState.school.motto}
+        isClerkActive={isClerkActive}
       />
 
       <Sidebar
@@ -391,11 +436,50 @@ export const App: React.FC = () => {
 
       <Toast message={toastMessage} kind={toastKind} />
 
-      <AuthModal
+      <ClerkAuthModal
         isOpen={isAuthModalOpen}
-        onLogin={handleLogin}
+        hasClerkKey={isClerkActive}
+        onLoginAsDemo={handleDemoLogin}
+        onKeyConfigured={(k) => {
+          onUpdateClerkKey(k);
+          showToast('Clerk Authentication enabled!');
+        }}
         onClose={() => setIsAuthModalOpen(false)}
       />
     </div>
+  );
+};
+
+export const App: React.FC = () => {
+  const [clerkKey, setClerkKey] = useState<string>(() => getClerkPublishableKey());
+
+  const handleUpdateClerkKey = (key: string) => {
+    if (key) {
+      saveClerkPublishableKey(key);
+      setClerkKey(key);
+    } else {
+      clearClerkPublishableKey();
+      setClerkKey('');
+    }
+  };
+
+  if (clerkKey) {
+    return (
+      <ClerkProvider publishableKey={clerkKey} afterSignOutUrl="/">
+        <AppContent
+          clerkKey={clerkKey}
+          onUpdateClerkKey={handleUpdateClerkKey}
+          isClerkActive={true}
+        />
+      </ClerkProvider>
+    );
+  }
+
+  return (
+    <AppContent
+      clerkKey=""
+      onUpdateClerkKey={handleUpdateClerkKey}
+      isClerkActive={false}
+    />
   );
 };

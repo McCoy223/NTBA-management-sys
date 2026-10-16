@@ -81,6 +81,8 @@ export interface UserSession {
   name: string;
   role: 'admin' | 'teacher' | 'registrar' | 'accountant';
   email: string;
+  avatar?: string;
+  clerkId?: string;
 }
 
 export interface ActivityItem {

@@ -60,17 +60,19 @@ This web application delivers a full administrative dashboard and student manage
   - Visual summaries of enrollment distribution across Early Years, Lower Primary, and Upper Primary.
   - Transport and feeding program participation statistics.
 
-- **User Authentication & Personas**
-  - Multi-persona switcher: Administrator, Class Teacher, Registrar, Finance Officer.
-  - Persistent session storage in `localStorage`.
+- **User Authentication (Clerk & Role-Based Personas)**
+  - Official Clerk integration (`@clerk/clerk-react`): turnkey sign-in, sign-up, Google SSO, and user profile management (`<UserButton />`).
+  - School role mappings: Administrator, Class Teacher, Registrar, Finance Officer.
+  - Demo personas for immediate evaluation and offline preview.
 
 ## Tech Stack
 
 - **Framework**: React 19 (SPA)
+- **Authentication**: Clerk (`@clerk/clerk-react`)
 - **Tooling**: Vite 6, TypeScript
 - **Icons**: Lucide React
-- **Styles**: Custom responsive CSS with CSS variables, gradients, and micro-interactions
-- **Persistence**: Client-side storage (`localStorage`) for offline readiness and state preservation
+- **Styles**: Custom responsive CSS with design system variables, gradients, and micro-interactions
+- **Persistence**: Client-side storage (`localStorage`) for state preservation
 
 ## Development
 
@@ -79,6 +81,29 @@ npm install
 npm run dev     # Starts dev server on port 3000
 npm run build   # Production Vite build
 ```
+
+## Clerk Authentication Setup
+
+1. **Get your free Clerk Publishable Key**:
+   - Go to [https://dashboard.clerk.com](https://dashboard.clerk.com) and create an application.
+   - Navigate to **API Keys** and copy your **Publishable Key** (`pk_test_...`).
+
+2. **Configure Locally**:
+   - Create a `.env` file from `.env.example`:
+     ```bash
+     VITE_CLERK_PUBLISHABLE_KEY=pk_test_your_key_here
+     ```
+   - Alternatively, enter your key directly inside the app's **Clerk Key** tab or in **Administration > System Settings**.
+
+3. **Configure User Roles in Clerk (Optional)**:
+   - In Clerk Dashboard > **Users**, select a user.
+   - Under **Public metadata**, add:
+     ```json
+     {
+       "role": "admin"
+     }
+     ```
+   - Supported roles: `admin`, `teacher`, `registrar`, `accountant`.
 
 ## Hosting with GitHub Pages (Automated Deployment)
 

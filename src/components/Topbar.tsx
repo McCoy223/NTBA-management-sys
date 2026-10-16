@@ -8,6 +8,7 @@ import {
   Check
 } from 'lucide-react';
 import { UserSession } from '../types';
+import { ClerkUserBadge } from './ClerkUserBadge';
 
 interface TopbarProps {
   user: UserSession;
@@ -19,6 +20,7 @@ interface TopbarProps {
   schoolName: string;
   schoolSub: string;
   schoolMotto: string;
+  isClerkActive?: boolean;
 }
 
 export const Topbar: React.FC<TopbarProps> = ({
@@ -31,6 +33,7 @@ export const Topbar: React.FC<TopbarProps> = ({
   schoolName,
   schoolSub,
   schoolMotto,
+  isClerkActive
 }) => {
   const [showBellMenu, setShowBellMenu] = useState(false);
   const [showRoleMenu, setShowRoleMenu] = useState(false);
@@ -154,38 +157,46 @@ export const Topbar: React.FC<TopbarProps> = ({
 
         {/* Profile & Role switcher */}
         <div style={{ position: 'relative' }}>
-          <div
-            className="profile"
-            style={{ cursor: 'pointer' }}
-            onClick={() => setShowRoleMenu(!showRoleMenu)}
-          >
-            <span className="avatar">
-              <UserCheck />
-            </span>
-            <div>
-              <b>{user.name}</b>
-              <small>
-                {user.role === 'admin'
-                  ? 'Administrator'
-                  : user.role === 'teacher'
-                  ? 'Teacher'
-                  : user.role === 'registrar'
-                  ? 'Registrar'
-                  : 'Finance Officer'}
-              </small>
-            </div>
-            <button
-              className="icon-btn signout"
-              onClick={(e) => {
-                e.stopPropagation();
-                onSignOut();
-              }}
-              title="Sign out"
-              aria-label="Sign out"
+          {isClerkActive ? (
+            <ClerkUserBadge
+              currentRole={user.role}
+              onSignOut={onSignOut}
+              onOpenRoleMenu={() => setShowRoleMenu(!showRoleMenu)}
+            />
+          ) : (
+            <div
+              className="profile"
+              style={{ cursor: 'pointer' }}
+              onClick={() => setShowRoleMenu(!showRoleMenu)}
             >
-              <LogOut />
-            </button>
-          </div>
+              <span className="avatar">
+                <UserCheck />
+              </span>
+              <div>
+                <b>{user.name}</b>
+                <small>
+                  {user.role === 'admin'
+                    ? 'Administrator'
+                    : user.role === 'teacher'
+                    ? 'Teacher'
+                    : user.role === 'registrar'
+                    ? 'Registrar'
+                    : 'Finance Officer'}
+                </small>
+              </div>
+              <button
+                className="icon-btn signout"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSignOut();
+                }}
+                title="Sign out"
+                aria-label="Sign out"
+              >
+                <LogOut />
+              </button>
+            </div>
+          )}
 
           {showRoleMenu && (
             <div
