@@ -15,7 +15,8 @@ import {
   Filter,
   Eye,
   Trash2,
-  Printer
+  Printer,
+  SquarePen
 } from 'lucide-react';
 import { Student } from '../types';
 
@@ -36,6 +37,7 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<'form' | 'directory'>('form');
   const [selectedStudentForModal, setSelectedStudentForModal] = useState<Student | null>(null);
+  const [editingStudentId, setEditingStudentId] = useState<string | null>(null);
 
   // Form state
   const [firstName, setFirstName] = useState('');
@@ -145,7 +147,41 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
   };
 
   // Reset form
+  const handleEditClick = (s: Student) => {
+    setEditingStudentId(s.id);
+    setFirstName(s.firstName);
+    setLastName(s.lastName);
+    setMiddleName(s.middleName || '');
+    setNationality(s.nationality || 'Ghanaian');
+    setDob(s.dob);
+    setGender(s.gender);
+    setPhoto(s.photo || '');
+    setKlass(s.klass);
+    setAcademicYear(s.academicYear || '2026 / 2027');
+    setTerm(s.term || 'Term 1');
+    setAdmissionDate(s.admissionDate || new Date().toISOString().slice(0, 10));
+    setHouse(s.house || '');
+    setTransport(s.transport || '');
+    setGuardianName(s.guardianName);
+    setGuardianRelation(s.guardianRelation);
+    setGuardianPhone(s.guardianPhone);
+    setGuardianAltPhone(s.guardianAltPhone || '');
+    setGuardianEmail(s.guardianEmail || '');
+    setGuardianJob(s.guardianJob || '');
+    setAddress(s.address || '');
+    setEmergencyName(s.emergencyName || '');
+    setEmergencyPhone(s.emergencyPhone || '');
+    setBloodGroup(s.bloodGroup || '');
+    setPrevSchool(s.prevSchool || '');
+    setMedicalNotes(s.medicalNotes || '');
+    setErrors({});
+    setIsDirty(false);
+    setSelectedStudentForModal(null);
+    setActiveTab('form');
+  };
+
   const handleReset = () => {
+    setEditingStudentId(null);
     setFirstName('');
     setLastName('');
     setMiddleName('');
@@ -207,8 +243,10 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
       return;
     }
 
+    const studentIdToUse = editingStudentId || generatedId;
+
     const newStudent: Student = {
-      id: generatedId,
+      id: studentIdToUse,
       firstName: firstName.trim(),
       lastName: lastName.trim(),
       middleName: middleName.trim() || undefined,
@@ -238,12 +276,17 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
     };
 
     onSaveStudent(newStudent);
-    showToast(`Registered ${newStudent.firstName} ${newStudent.lastName} (${newStudent.id})!`);
+    showToast(
+      editingStudentId
+        ? `Updated record for ${newStudent.firstName} ${newStudent.lastName} (${newStudent.id})`
+        : `Registered ${newStudent.firstName} ${newStudent.lastName} (${newStudent.id})!`
+    );
 
     if (andAddAnother) {
       handleReset();
     } else {
       setIsDirty(false);
+      setEditingStudentId(null);
       setActiveTab('directory');
     }
   };
@@ -431,6 +474,14 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
                             onClick={() => setSelectedStudentForModal(s)}
                           >
                             <Eye />
+                          </button>
+                          <button
+                            type="button"
+                            className="icon-btn"
+                            title="Edit student record"
+                            onClick={() => handleEditClick(s)}
+                          >
+                            <SquarePen />
                           </button>
                           <button
                             type="button"

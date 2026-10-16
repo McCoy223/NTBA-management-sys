@@ -166,9 +166,15 @@ export const App: React.FC = () => {
 
   // Student CRUD
   const handleSaveStudent = (newStudent: Student) => {
-    setStudents((prev) => [newStudent, ...prev]);
+    setStudents((prev) => {
+      const exists = prev.some((s) => s.id === newStudent.id);
+      if (exists) {
+        return prev.map((s) => (s.id === newStudent.id ? newStudent : s));
+      }
+      return [newStudent, ...prev];
+    });
     recordActivity(
-      'New Student Registered',
+      'Student Record Saved',
       `${newStudent.firstName} ${newStudent.lastName} (${newStudent.klass})`,
       'green',
       'UserRoundPlus'
