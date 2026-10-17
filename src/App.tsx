@@ -450,6 +450,39 @@ const AppContent: React.FC<AppContentProps> = ({
   );
 };
 
+interface ClerkErrorBoundaryProps {
+  children: React.ReactNode;
+  fallback: React.ReactNode;
+  onClerkError?: () => void;
+}
+
+interface ClerkErrorBoundaryState {
+  hasError: boolean;
+}
+
+class ClerkErrorBoundary extends React.Component<ClerkErrorBoundaryProps, ClerkErrorBoundaryState> {
+  constructor(props: ClerkErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error) {
+    console.warn('[Clerk] Provider initialization failed, falling back to offline demo auth:', error.message);
+    this.props.onClerkError?.();
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback;
+    }
+    return this.props.children;
+  }
+}
+
 export const App: React.FC = () => {
   const [clerkKey, setClerkKey] = useState<string>(() => getClerkPublishableKey());
 
@@ -463,15 +496,31 @@ export const App: React.FC = () => {
     }
   };
 
+  const handleClerkFailure = () => {
+    clearClerkPublishableKey();
+    setClerkKey('');
+  };
+
   if (clerkKey) {
     return (
-      <ClerkProvider publishableKey={clerkKey} afterSignOutUrl="/">
-        <AppContent
-          clerkKey={clerkKey}
-          onUpdateClerkKey={handleUpdateClerkKey}
-          isClerkActive={true}
-        />
-      </ClerkProvider>
+      <ClerkErrorBoundary
+        fallback={
+          <AppContent
+            clerkKey=""
+            onUpdateClerkKey={handleUpdateClerkKey}
+            isClerkActive={false}
+          />
+        }
+        onClerkError={handleClerkFailure}
+      >
+        <ClerkProvider publishableKey={clerkKey} afterSignOutUrl="/">
+          <AppContent
+            clerkKey={clerkKey}
+            onUpdateClerkKey={handleUpdateClerkKey}
+            isClerkActive={true}
+          />
+        </ClerkProvider>
+      </ClerkErrorBoundary>
     );
   }
 
@@ -483,3 +532,4 @@ export const App: React.FC = () => {
     />
   );
 };
+
