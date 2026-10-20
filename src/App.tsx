@@ -5,6 +5,7 @@ import { Sidebar } from './components/Sidebar';
 import { Toast } from './components/Toast';
 import { ClerkAuthModal } from './components/ClerkAuthModal';
 import { ClerkAuthSync } from './components/ClerkAuthSync';
+import { ClerkErrorBoundary } from './components/ClerkErrorBoundary';
 
 import { DashboardView } from './views/DashboardView';
 import { StudentsView } from './views/StudentsView';
@@ -173,9 +174,13 @@ const AppContent: React.FC<AppContentProps> = ({
   };
 
   const handleClerkSignedOut = () => {
-    if (isClerkActive) {
-      setIsAuthModalOpen(true);
-    }
+    setUser((prev) => {
+      if (prev.clerkId) {
+        setIsAuthModalOpen(true);
+        return DEFAULT_USER;
+      }
+      return prev;
+    });
   };
 
   // Activity logger helper
@@ -422,6 +427,7 @@ const AppContent: React.FC<AppContentProps> = ({
         schoolSub={editorState.school.sub}
         schoolMotto={editorState.school.motto}
         isClerkActive={isClerkActive}
+        onOpenAuthModal={() => setIsAuthModalOpen(true)}
       />
 
       <Sidebar
@@ -450,39 +456,6 @@ const AppContent: React.FC<AppContentProps> = ({
   );
 };
 
-interface ClerkErrorBoundaryProps {
-  children: React.ReactNode;
-  fallback: React.ReactNode;
-  onClerkError?: () => void;
-}
-
-interface ClerkErrorBoundaryState {
-  hasError: boolean;
-}
-
-class ClerkErrorBoundary extends React.Component<ClerkErrorBoundaryProps, ClerkErrorBoundaryState> {
-  constructor(props: ClerkErrorBoundaryProps) {
-    super(props);
-    this.state = { hasError: false };
-  }
-
-  static getDerivedStateFromError() {
-    return { hasError: true };
-  }
-
-  componentDidCatch(error: Error) {
-    console.warn('[Clerk] Provider initialization failed, falling back to offline demo auth:', error.message);
-    this.props.onClerkError?.();
-  }
-
-  render() {
-    if (this.state.hasError) {
-      return this.props.fallback;
-    }
-    return this.props.children;
-  }
-}
-
 export const App: React.FC = () => {
   const [clerkKey, setClerkKey] = useState<string>(() => getClerkPublishableKey());
 
@@ -496,22 +469,17 @@ export const App: React.FC = () => {
     }
   };
 
-  const handleClerkFailure = () => {
-    clearClerkPublishableKey();
-    setClerkKey('');
-  };
-
   if (clerkKey) {
     return (
       <ClerkErrorBoundary
-        fallback={
+        onResetKey={() => handleUpdateClerkKey('')}
+        fallbackComponent={
           <AppContent
             clerkKey=""
             onUpdateClerkKey={handleUpdateClerkKey}
             isClerkActive={false}
           />
         }
-        onClerkError={handleClerkFailure}
       >
         <ClerkProvider publishableKey={clerkKey} afterSignOutUrl="/">
           <AppContent
@@ -532,4 +500,3 @@ export const App: React.FC = () => {
     />
   );
 };
-

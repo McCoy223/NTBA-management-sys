@@ -21,6 +21,7 @@ interface TopbarProps {
   schoolSub: string;
   schoolMotto: string;
   isClerkActive?: boolean;
+  onOpenAuthModal?: () => void;
 }
 
 export const Topbar: React.FC<TopbarProps> = ({
@@ -33,7 +34,8 @@ export const Topbar: React.FC<TopbarProps> = ({
   schoolName,
   schoolSub,
   schoolMotto,
-  isClerkActive
+  isClerkActive,
+  onOpenAuthModal
 }) => {
   const [showBellMenu, setShowBellMenu] = useState(false);
   const [showRoleMenu, setShowRoleMenu] = useState(false);
@@ -162,6 +164,7 @@ export const Topbar: React.FC<TopbarProps> = ({
               currentRole={user.role}
               onSignOut={onSignOut}
               onOpenRoleMenu={() => setShowRoleMenu(!showRoleMenu)}
+              onOpenAuthModal={onOpenAuthModal}
             />
           ) : (
             <div

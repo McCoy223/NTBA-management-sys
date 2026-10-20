@@ -1,25 +1,29 @@
 import React from 'react';
 import { UserButton, useUser, useClerk } from '@clerk/clerk-react';
-import { LogOut } from 'lucide-react';
+import { LogOut, UserCheck, LogIn } from 'lucide-react';
 import { UserSession } from '../types';
 
 interface ClerkUserBadgeProps {
   currentRole: UserSession['role'];
   onSignOut: () => void;
   onOpenRoleMenu: () => void;
+  onOpenAuthModal?: () => void;
 }
 
 export const ClerkUserBadge: React.FC<ClerkUserBadgeProps> = ({
   currentRole,
   onSignOut,
-  onOpenRoleMenu
+  onOpenRoleMenu,
+  onOpenAuthModal
 }) => {
-  const { user, isLoaded } = useUser();
+  const { user, isLoaded, isSignedIn } = useUser();
   const { signOut } = useClerk();
 
   const handleSignOut = async () => {
     try {
-      await signOut();
+      if (isSignedIn) {
+        await signOut();
+      }
     } catch {}
     onSignOut();
   };
@@ -54,14 +58,30 @@ export const ClerkUserBadge: React.FC<ClerkUserBadgeProps> = ({
         color: '#fff'
       }}
     >
-      <UserButton
-        afterSignOutUrl="/"
-        appearance={{
-          elements: {
-            avatarBox: { width: '32px', height: '32px' }
-          }
-        }}
-      />
+      {isLoaded && isSignedIn ? (
+        <UserButton
+          afterSignOutUrl="/"
+          appearance={{
+            elements: {
+              avatarBox: { width: '32px', height: '32px' }
+            }
+          }}
+        />
+      ) : (
+        <span
+          className="avatar"
+          style={{
+            width: '32px',
+            height: '32px',
+            borderRadius: '50%',
+            background: 'rgba(255,255,255,0.18)',
+            display: 'grid',
+            placeItems: 'center'
+          }}
+        >
+          <UserCheck style={{ width: '18px', height: '18px' }} />
+        </span>
+      )}
       <div
         style={{ cursor: 'pointer', textAlign: 'left' }}
         onClick={onOpenRoleMenu}
@@ -86,6 +106,31 @@ export const ClerkUserBadge: React.FC<ClerkUserBadgeProps> = ({
           {displayEmail || 'Clerk Account'} • Switch Role ▾
         </small>
       </div>
+
+      {!isSignedIn && onOpenAuthModal && (
+        <button
+          type="button"
+          onClick={onOpenAuthModal}
+          title="Sign in with Clerk"
+          style={{
+            marginLeft: '4px',
+            padding: '4px 9px',
+            borderRadius: '6px',
+            background: '#ffdd57',
+            color: '#073a78',
+            border: 0,
+            fontSize: '11px',
+            fontWeight: 700,
+            cursor: 'pointer',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '4px'
+          }}
+        >
+          <LogIn style={{ width: '12px', height: '12px' }} />
+          Sign In
+        </button>
+      )}
 
       <button
         type="button"
